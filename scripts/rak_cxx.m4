@@ -1,18 +1,3 @@
-AC_DEFUN([RAK_CHECK_CXX11], [
-  AC_ARG_ENABLE([c++0x],
-    AC_HELP_STRING([--enable-c++0x], [compile with C++0x (unsupported)]),
-    [
-      if test "$enableval" = "yes"; then
-        AX_CXX_COMPILE_STDCXX_0X
-      else
-        AX_CXX_COMPILE_STDCXX_11(noext)
-      fi
-    ],[
-      AX_CXX_COMPILE_STDCXX_11(noext)
-    ]
-  )
-])
-
 AC_DEFUN([RAK_CHECK_TR1_LIB], [
   AC_LANG_PUSH(C++)
   AC_MSG_CHECKING(should use TR1 headers)
@@ -47,7 +32,7 @@ AC_DEFUN([RAK_CHECK_TR1_LIB], [
         AC_DEFINE([lt_tr1_unordered_map], [<tr1/unordered_map>], [TR1 unordered_map])
 
     ], [
-        AC_MSG_ERROR([No support for C++11 standard library nor TR1 extensions found.])
+        AC_MSG_ERROR([No support for C++14 standard library nor TR1 extensions found.])
     ])
   ])
 

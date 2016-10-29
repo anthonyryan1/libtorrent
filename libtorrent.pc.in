@@ -8,3 +8,4 @@ Description: A BitTorrent library
 Version: @VERSION@
 Libs: -L${libdir} -ltorrent
 Cflags: -I${includedir}
+
