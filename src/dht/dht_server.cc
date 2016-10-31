@@ -5,12 +5,12 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -39,6 +39,10 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <mutex>  // For std::unique_lock
+#include <boost/thread/shared_mutex.hpp>
+// #include <shared_mutex> GCC 6+
+// sed /boost::/std::/
 #include <rak/functional.h>
 
 #include "torrent/exceptions.h"
@@ -128,6 +132,8 @@ DhtServer::DhtServer(DhtRouter* router) :
 DhtServer::~DhtServer() {
   stop();
 
+  boost::unique_lock<boost::shared_mutex> lock(m_mutexQueue);
+
   std::for_each(m_highQueue.begin(), m_highQueue.end(), rak::call_delete<DhtTransactionPacket>());
   std::for_each(m_lowQueue.begin(), m_lowQueue.end(), rak::call_delete<DhtTransactionPacket>());
 
@@ -192,7 +198,7 @@ DhtServer::stop() {
 }
 
 void
-DhtServer::reset_statistics() { 
+DhtServer::reset_statistics() {
   m_queriesReceived = 0;
   m_queriesSent = 0;
   m_repliesReceived = 0;
@@ -494,6 +500,8 @@ DhtServer::find_node_next(DhtTransactionSearch* transaction) {
 
 void
 DhtServer::add_packet(DhtTransactionPacket* packet, int priority) {
+  boost::unique_lock<boost::shared_mutex> lock(m_mutexQueue);
+
   switch (priority) {
     // High priority packets are for important queries, and quite small.
     // They're added to front of high priority queue and thus will be the
@@ -736,7 +744,7 @@ DhtServer::event_read() {
       }
 
       // Sanity check the returned transaction ID.
-      if ((type == 'r' || type == 'e') && 
+      if ((type == 'r' || type == 'e') &&
           (!message[key_t].is_raw_string() || message[key_t].as_raw_string().size() != 1))
         throw dht_error(dht_error_protocol, "Invalid transaction ID type/length.");
 
@@ -798,7 +806,7 @@ DhtServer::process_queue(packet_queue& queue, uint32_t* quota) {
     DhtTransactionPacket* packet = queue.front();
 
     // Make sure its transaction hasn't timed out yet, if it has/had one
-    // and don't bother sending non-transaction packets (replies) after 
+    // and don't bother sending non-transaction packets (replies) after
     // more than 15 seconds in the queue.
     if (packet->has_failed() || packet->age() > 15) {
       delete packet;
@@ -848,6 +856,8 @@ DhtServer::process_queue(packet_queue& queue, uint32_t* quota) {
 
 void
 DhtServer::event_write() {
+  boost::unique_lock<boost::shared_mutex> lock(m_mutexQueue);
+
   if (m_highQueue.empty() && m_lowQueue.empty())
     throw internal_error("DhtServer::event_write called but both write queues are empty.");
 
@@ -872,6 +882,8 @@ DhtServer::event_error() {
 
 void
 DhtServer::start_write() {
+  boost::shared_lock<boost::shared_mutex> lock(m_mutexQueue);
+
   if ((!m_highQueue.empty() || !m_lowQueue.empty()) && !m_uploadThrottle->is_throttled(&m_uploadNode)) {
     m_uploadThrottle->insert(&m_uploadNode);
     manager->poll()->insert_write(this);

@@ -12,6 +12,8 @@ lib_LTLIBRARIES = libtorrent.la
 
 libtorrent_la_LDFLAGS = -version-info $(LIBTORRENT_INTERFACE_VERSION_INFO)
 libtorrent_la_LIBADD = \
+	$(BOOST_FILESYSTEM_LIB) \
+	$(BOOST_SYSTEM_LIB) \
 	torrent/libsub_torrent.la \
 	torrent/data/libsub_torrentdata.la \
 	torrent/download/libsub_torrentdownload.la \
@@ -35,4 +37,7 @@ libtorrent_la_SOURCES = \
 	thread_main.cc \
 	thread_main.h
 
-AM_CPPFLAGS = -I$(srcdir) -I$(top_srcdir)
+AM_CPPFLAGS = -I$(srcdir) -I$(top_srcdir) $(BOOST_CPPFLAGS)
+AM_LDFLAGS = $(BOOST_LDFLAGS)
+
+

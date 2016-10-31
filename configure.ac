@@ -55,6 +55,9 @@ TORRENT_WITHOUT_STATFS
 
 CC_ATTRIBUTE_VISIBILITY
 
+AX_BOOST_BASE([1.50],, [AC_MSG_ERROR([libtorrent needs Boost, but it was not found in your system])])
+AX_BOOST_SYSTEM
+AX_BOOST_THREAD
 AX_PTHREAD
 AX_CHECK_ZLIB
 

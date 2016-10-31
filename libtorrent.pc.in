@@ -6,5 +6,5 @@ includedir=@includedir@
 Name: libtorrent
 Description: A BitTorrent library
 Version: @VERSION@
-Libs: -L${libdir} -ltorrent
+Libs: -L${libdir} -ltorrent -lboost_system -lboost_thread
 Cflags: -I${includedir}
