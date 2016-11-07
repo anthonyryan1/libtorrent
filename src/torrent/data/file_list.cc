@@ -166,6 +166,9 @@ FileList::left_bytes() const {
 
 uint32_t
 FileList::chunk_index_size(uint32_t index) const {
+  if (chunk_size() == 0)
+    throw internal_error("FileList::chunk_index_size() called but FileList not initialized.");
+
   if (index + 1 != size_chunks() || size_bytes() % chunk_size() == 0)
     return chunk_size();
   else

@@ -419,6 +419,10 @@ PeerConnectionMetadata::read_skip_bitfield() {
 // Same as the PCB code, but only one at a time and with the extension protocol.
 bool
 PeerConnectionMetadata::try_request_metadata_pieces() {
+  // If the file list is not initialized, we cannot proceed
+  if (m_download->file_list()->empty())
+    return false;
+
   if (m_download->file_list()->chunk_size() == 1 || !m_extensions->is_remote_supported(ProtocolExtension::UT_METADATA))
     return false;
 
