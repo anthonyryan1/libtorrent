@@ -996,10 +996,12 @@ Handshake::prepare_key_plus_pad() {
   m_writeBuffer.move_end(96);
 
   int length = random() % enc_pad_size;
-  char pad[length];
+  if (length > 0) {
+    char pad[length];
 
-  std::generate_n(pad, length, &::random);
-  m_writeBuffer.write_len(pad, length);
+    std::generate_n(pad, length, &::random);
+    m_writeBuffer.write_len(pad, length);
+  }
 }
 
 void
