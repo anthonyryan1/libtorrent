@@ -1,26 +1,3 @@
-AC_DEFUN([TORRENT_WITH_SYSROOT], [
-  AC_ARG_WITH(sysroot,
-    AS_HELP_STRING([--with-sysroot=PATH],
-      [compile and link with a specific sysroot]),
-    [
-      AC_MSG_CHECKING(for sysroot)
-
-      if test "$withval" = "no"; then
-        AC_MSG_RESULT(no)
-
-      elif test "$withval" = "yes"; then
-        AC_MSG_RESULT(not a path)
-        AC_MSG_ERROR(The sysroot option must point to a directory, like f.ex "/Developer/SDKs/MacOSX10.4u.sdk".)
-      else
-        AC_MSG_RESULT($withval)
-        
-        CXXFLAGS="$CXXFLAGS -isysroot $withval"
-        LDFLAGS="$LDFLAGS -Wl,-syslibroot,$withval"
-      fi
-    ])
-])
-
-
 AC_DEFUN([TORRENT_ENABLE_ARCH], [
   AC_ARG_ENABLE(arch,
     AS_HELP_STRING([--enable-arch=ARCH],
