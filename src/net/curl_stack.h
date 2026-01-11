@@ -8,6 +8,8 @@
 #include <vector>
 #include <curl/curl.h>
 
+#include "net/curl_share.h"
+#include "torrent/exceptions.h"
 #include "torrent/utils/scheduler.h"
 
 namespace torrent::net {
@@ -54,6 +56,9 @@ public:
   long                dns_timeout() const;
   void                set_dns_timeout(long timeout);
 
+  bool                share_enabled() const;
+  void                set_share_enabled(bool enable);
+
   void                shutdown();
 
   void                start_get(const std::shared_ptr<CurlGet>& curl_get);
@@ -87,6 +92,7 @@ private:
   // thread-safe. E.g. before any threads are started or only within the owning thread.
   utils::Thread*        m_thread{};
   CURLM*                m_handle{};
+  CurlShare             m_share;
   utils::SchedulerEntry m_task_timeout;
 
   mutable std::mutex  m_mutex;
@@ -106,6 +112,8 @@ private:
   bool                m_ssl_verify_host{true};
   bool                m_ssl_verify_peer{true};
   long                m_dns_timeout{60};
+
+  bool                m_share_enabled{true};
 };
 
 inline bool
@@ -220,6 +228,21 @@ inline void
 CurlStack::set_dns_timeout(long timeout) {
   auto guard = lock_guard();
   m_dns_timeout = timeout;
+}
+
+inline bool
+CurlStack::share_enabled() const {
+  auto guard = lock_guard();
+  return m_share_enabled;
+}
+
+inline void
+CurlStack::set_share_enabled(bool enable) {
+  if (m_share.is_initialized())
+    throw torrent::internal_error("CurlStack::set_share_enabled() called after initialization.");
+
+  auto guard = lock_guard();
+  m_share_enabled = enable;
 }
 
 } // namespace torrent::net

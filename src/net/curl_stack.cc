@@ -27,6 +27,10 @@ CurlStack::CurlStack(utils::Thread* thread)
   curl_multi_setopt(m_handle, CURLMOPT_MAXCONNECTS, m_max_cache_connections);
   curl_multi_setopt(m_handle, CURLMOPT_MAX_HOST_CONNECTIONS, m_max_host_connections);
   curl_multi_setopt(m_handle, CURLMOPT_MAX_TOTAL_CONNECTIONS, m_max_total_connections);
+
+  // Initialize the share handle for sharing DNS, TLS sessions, and connections
+  if (m_share_enabled)
+    m_share.initialize();
 }
 
 CurlStack::~CurlStack() {
@@ -86,6 +90,7 @@ CurlStack::shutdown() {
     close_get(base_type::back());
 
   curl_multi_cleanup(m_handle);
+  m_share.cleanup();
 
   m_handle = nullptr;
   torrent::this_thread::scheduler()->erase(&m_task_timeout);
@@ -123,6 +128,10 @@ CurlStack::start_get(const std::shared_ptr<CurlGet>& curl_get) {
     curl_easy_setopt(curl_get->handle_unsafe(), CURLOPT_SSL_VERIFYHOST, m_ssl_verify_host ? 2l : 0l);
     curl_easy_setopt(curl_get->handle_unsafe(), CURLOPT_SSL_VERIFYPEER, m_ssl_verify_peer ? 1l : 0l);
     curl_easy_setopt(curl_get->handle_unsafe(), CURLOPT_DNS_CACHE_TIMEOUT, m_dns_timeout);
+
+    // Set the share handle if enabled, to share DNS, TLS sessions, and connections
+    if (m_share.is_initialized())
+      curl_easy_setopt(curl_get->handle_unsafe(), CURLOPT_SHARE, m_share.handle());
 
     base_type::push_back(curl_get);
 
