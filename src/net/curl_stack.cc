@@ -4,11 +4,13 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cinttypes>
 #include <curl/multi.h>
 
 #include "net/curl_get.h"
 #include "net/curl_socket.h"
 #include "torrent/exceptions.h"
+#include "torrent/utils/log.h"
 #include "torrent/utils/thread.h"
 
 namespace torrent::net {
@@ -231,6 +233,22 @@ CurlStack::process_done_handle() {
   // TODO: Search if handle is still in the stack, and if not, assume it was closed and clean up. (check is_active)
 
   auto itr = find_curl_handle(msg->easy_handle);
+
+  // Log timing information to measure curl share performance (DNS cache, TLS session reuse)
+  if (lt_log_is_valid(LOG_TRACKER_REQUESTS)) {
+    curl_off_t namelookup_time_us = 0;
+    curl_off_t appconnect_time_us = 0;
+    char* effective_url = nullptr;
+
+    curl_easy_getinfo(msg->easy_handle, CURLINFO_NAMELOOKUP_TIME_T, &namelookup_time_us);
+    curl_easy_getinfo(msg->easy_handle, CURLINFO_APPCONNECT_TIME_T, &appconnect_time_us);
+    curl_easy_getinfo(msg->easy_handle, CURLINFO_EFFECTIVE_URL, &effective_url);
+
+    lt_log_print(LOG_TRACKER_REQUESTS, "curl_timing: url=%s dns_time_ms=%" PRId64 " tls_time_ms=%" PRId64,
+                 effective_url ? effective_url : "unknown",
+                 static_cast<int64_t>(namelookup_time_us / 1000),
+                 static_cast<int64_t>(appconnect_time_us / 1000));
+  }
 
   // TODO: Lock CurlGet here, do the retry or retrieve the slots, instead of using trigger_*.
 
