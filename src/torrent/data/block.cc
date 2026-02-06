@@ -332,6 +332,16 @@ Block::failed_leader() {
   if (!is_finished())
     throw internal_error("Block::failed_leader(...) !is_finished().");
 
+  m_leader->set_peer_info(NULL);
+
+  auto itr = std::find(m_transfers.begin(), m_transfers.end(), m_leader);
+  if (itr != m_transfers.end()) {
+    m_transfers.erase(itr);
+  }
+
+  // m_block was already set to NULL by Block::completed(), safe to delete
+  delete m_leader;
+
   m_leader = NULL;
 
   if (m_failedList != NULL)
